@@ -1,6 +1,6 @@
 # Inkredible - A Digital Sketchbook App
 
-A feature-rich digital sketching platform built with **React**, **TypeScript**, **Vite**, and the **HTML Canvas API**. Draw, sketch, and create with a powerful set of tools and a seamless user experience, optimized for both desktop and mobile devices! :)
+A feature-rich digital sketching platform built with **React**, **TypeScript**, **Vite**, and the **HTML Canvas API**. Draw, sketch, and create with a powerful set of tools and a seamless user experience! :)
 
 ---
 
@@ -48,7 +48,7 @@ A feature-rich digital sketching platform built with **React**, **TypeScript**, 
 1. Clone the repository:
     ```bash
     git clone https://github.com/yourusername/digital-sketchbook-app.git
-    cd digital-sketchbook-app
+    cd inkredible
     ```
 
 2. Install dependencies:
@@ -73,6 +73,7 @@ A feature-rich digital sketching platform built with **React**, **TypeScript**, 
 - **Brush**: Select a color and size, then draw freely on the canvas.
 - **Eraser**: Erase parts of your drawing by adjusting the eraser size.
 - **Text Tool**: Add text to the canvas and customize its appearance.
+- **Delete**: Clear the entire canvas with a single click to start fresh.
   
 ### Canvas Customization
 
@@ -82,7 +83,7 @@ A feature-rich digital sketching platform built with **React**, **TypeScript**, 
 ### Editing & Export
 
 - **Undo/Redo**: Quickly undo or redo your last action.
-- **Export**: Save your drawing as an image file (PNG/JPG) to share or reuse.
+- **Export**: Save your drawing as an image file (PNG) to share.
 
 ### Touch Support
 
