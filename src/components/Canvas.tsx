@@ -3,7 +3,8 @@ import { useCanvasContext } from '../contexts/CanvasContext';
 import { Tool, Pattern } from '../types';
 
 export default function Canvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const bgCanvasRef = useRef<HTMLCanvasElement>(null);
+  const fgCanvasRef = useRef<HTMLCanvasElement>(null);
   const { 
     currentTool,
     brushSize,
@@ -23,7 +24,14 @@ export default function Canvas() {
   const [lastY, setLastY] = useState(0);
 
   const drawPattern = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.save(); // Save current canvas state
+    ctx.clearRect(0, 0, width, height);
+    
+    // Set background color based on theme
+    ctx.fillStyle = isDarkMode ? '#111827' : '#f9fafb';
+    ctx.fillRect(0, 0, width, height);
+    
+    if (currentPattern === Pattern.NONE) return;
+
     ctx.strokeStyle = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
     ctx.lineWidth = 1;
 
@@ -68,7 +76,6 @@ export default function Canvas() {
 
       case Pattern.CROSSHATCH:
         const spacing = 20;
-        // Draw diagonal lines in both directions
         for (let x = -height; x < width; x += spacing) {
           ctx.beginPath();
           ctx.moveTo(x, 0);
@@ -83,84 +90,75 @@ export default function Canvas() {
         }
         break;
     }
-    ctx.restore(); // Restore the canvas state
+  };
+
+  const setupCanvas = (canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) => {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    return { width: rect.width, height: rect.height };
   };
 
   useEffect(() => {
     const handleResize = () => {
-      if (canvasRef.current && ctx) {
-        const canvas = canvasRef.current;
-        const rect = canvas.getBoundingClientRect();
+      if (bgCanvasRef.current && fgCanvasRef.current) {
+        const bgCtx = bgCanvasRef.current.getContext('2d');
+        const fgCtx = fgCanvasRef.current.getContext('2d');
         
-        // Save the current canvas content
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        if (tempCtx) {
-          tempCtx.drawImage(canvas, 0, 0);
-        }
+        if (bgCtx && fgCtx) {
+          // Save foreground content
+          const tempCanvas = document.createElement('canvas');
+          const tempCtx = tempCanvas.getContext('2d');
+          if (tempCtx) {
+            tempCanvas.width = fgCanvasRef.current.width;
+            tempCanvas.height = fgCanvasRef.current.height;
+            tempCtx.drawImage(fgCanvasRef.current, 0, 0);
+          }
 
-        // Resize canvas
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
-        
-        // Restore context properties
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = brushOpacity;
-        
-        // Restore the canvas content
-        ctx.drawImage(tempCanvas, 0, 0, rect.width, rect.height);
-        
-        // Redraw pattern
-        if (currentPattern !== Pattern.NONE) {
-          drawPattern(ctx, rect.width, rect.height);
+          // Resize and setup both canvases
+          const { width, height } = setupCanvas(bgCanvasRef.current, bgCtx);
+          setupCanvas(fgCanvasRef.current, fgCtx);
+          
+          // Redraw background
+          drawPattern(bgCtx, width, height);
+          
+          // Restore foreground content
+          if (tempCtx) {
+            fgCtx.drawImage(tempCanvas, 0, 0, width, height);
+          }
+          
+          setCtx(fgCtx);
         }
       }
     };
 
-    if (canvasRef.current) {
-      const canvas = canvasRef.current;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
+    // Initial setup
+    if (bgCanvasRef.current && fgCanvasRef.current) {
+      const bgCtx = bgCanvasRef.current.getContext('2d');
+      const fgCtx = fgCanvasRef.current.getContext('2d');
       
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.scale(window.devicePixelRatio, window.devicePixelRatio);
-        context.lineCap = 'round';
-        context.lineJoin = 'round';
-        context.globalAlpha = brushOpacity;
-        setCtx(context);
-
-        if (currentPattern !== Pattern.NONE) {
-          drawPattern(context, rect.width, rect.height);
-        }
+      if (bgCtx && fgCtx) {
+        const { width, height } = setupCanvas(bgCanvasRef.current, bgCtx);
+        setupCanvas(fgCanvasRef.current, fgCtx);
+        drawPattern(bgCtx, width, height);
+        setCtx(fgCtx);
       }
     }
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [brushOpacity, currentPattern, isDarkMode]);
+  }, []);
 
+  // Update background when pattern or theme changes
   useEffect(() => {
-    if (ctx && canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      ctx.clearRect(0, 0, rect.width, rect.height); // clear canvas before redrawing
-      // Save canvas context before changing background
-      ctx.save();
-
-      // Change background color based on theme
-      ctx.fillStyle = isDarkMode ? '#1a1a1a' : '#ffffff'; // dark/light mode background
-      ctx.fillRect(0, 0, rect.width, rect.height); // fill background
-
-      // Restore the context (preserving drawing state)
-      ctx.restore();
-
-      if (currentPattern !== Pattern.NONE) {
-        drawPattern(ctx, rect.width, rect.height);
+    if (bgCanvasRef.current) {
+      const bgCtx = bgCanvasRef.current.getContext('2d');
+      if (bgCtx) {
+        const rect = bgCanvasRef.current.getBoundingClientRect();
+        drawPattern(bgCtx, rect.width, rect.height);
       }
     }
   }, [currentPattern, isDarkMode]);
@@ -174,24 +172,21 @@ export default function Canvas() {
   }, [brushColor, brushSize, brushOpacity, ctx]);
 
   useEffect(() => {
-    if (ctx && canvasRef.current && history[currentHistoryIndex]) {
+    if (ctx && fgCanvasRef.current && history[currentHistoryIndex]) {
       const img = new Image();
       img.src = history[currentHistoryIndex].dataUrl;
       img.onload = () => {
-        if (canvasRef.current) {
-          const rect = canvasRef.current.getBoundingClientRect();
+        if (fgCanvasRef.current) {
+          const rect = fgCanvasRef.current.getBoundingClientRect();
           ctx.clearRect(0, 0, rect.width, rect.height);
-          if (currentPattern !== Pattern.NONE) {
-            drawPattern(ctx, rect.width, rect.height);
-          }
           ctx.drawImage(img, 0, 0, rect.width, rect.height);
         }
       };
     }
-  }, [currentHistoryIndex, history, currentPattern]);
+  }, [currentHistoryIndex, history]);
 
   const getPointerPos = (e: React.TouchEvent | React.MouseEvent) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
+    const rect = fgCanvasRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
 
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -213,7 +208,7 @@ export default function Canvas() {
 
   const draw = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
-    if (!isDrawing || !ctx || !canvasRef.current) return;
+    if (!isDrawing || !ctx || !fgCanvasRef.current) return;
 
     const { x, y } = getPointerPos(e);
 
@@ -225,9 +220,9 @@ export default function Canvas() {
     } else if (currentTool === Tool.ERASER) {
       ctx.globalCompositeOperation = 'destination-out';
       ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(x, y);
-      ctx.stroke();
+      ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
     }
 
     setLastX(x);
@@ -235,22 +230,33 @@ export default function Canvas() {
   };
 
   const stopDrawing = () => {
-    setIsDrawing(false);
-    if (ctx && canvasRef.current) {
-      addToHistory(ctx.canvas.toDataURL());
+    if (isDrawing && fgCanvasRef.current) {
+      setIsDrawing(false);
+      addToHistory(fgCanvasRef.current.toDataURL());
     }
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      onMouseDown={startDrawing}
-      onTouchStart={startDrawing}
-      onMouseMove={draw}
-      onTouchMove={draw}
-      onMouseUp={stopDrawing}
-      onTouchEnd={stopDrawing}
-      className="w-full h-full cursor-pointer"
-    />
+    <>
+      <canvas
+        ref={bgCanvasRef}
+        className="absolute inset-0 touch-none"
+        style={{ width: '100%', height: '100%' }}
+      />
+      <canvas
+        ref={fgCanvasRef}
+        className={`absolute inset-0 touch-none ${
+          currentTool === Tool.BRUSH ? 'cursor-brush' : 'cursor-eraser'
+        }`}
+        style={{ width: '100%', height: '100%' }}
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={stopDrawing}
+        onMouseOut={stopDrawing}
+        onTouchStart={startDrawing}
+        onTouchMove={draw}
+        onTouchEnd={stopDrawing}
+      />
+    </>
   );
 }
