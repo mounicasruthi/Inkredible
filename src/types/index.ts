@@ -1,6 +1,8 @@
 export enum Tool {
+  CURSOR = 'CURSOR',
   BRUSH = 'BRUSH',
   ERASER = 'ERASER',
+  TEXT = 'TEXT',
 }
 
 export enum Pattern {

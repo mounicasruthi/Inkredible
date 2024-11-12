@@ -12,7 +12,9 @@ import {
   Grid,
   Circle,
   Rows3,
-  Hash
+  Hash,
+  Type,
+  MousePointer
 } from 'lucide-react';
 import { useCanvasContext ,  PRESET_COLORS } from '../contexts/CanvasContext';
 import { Tool, Pattern } from '../types';
@@ -30,7 +32,9 @@ export default function Toolbar() {
     undo,
     redo,
     canUndo,
-    canRedo
+    canRedo,
+    fontSize,
+    setFontSize
   } = useCanvasContext();
 
   const handleDownload = () => {
@@ -53,21 +57,35 @@ export default function Toolbar() {
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 flex items-center gap-4 transition-all">
-      <div className="flex items-center gap-3 pr-4 border-r border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => setCurrentTool(Tool.BRUSH)}
-          className={`toolbar-btn ${currentTool === Tool.BRUSH ? 'active' : ''}`}
-          title="Brush"
-        >
-          <Pencil className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setCurrentTool(Tool.ERASER)}
-          className={`toolbar-btn ${currentTool === Tool.ERASER ? 'active' : ''}`}
-          title="Eraser"
-        >
-          <Eraser className="w-5 h-5" />
-        </button>
+    <div className="flex items-center gap-3 pr-4 border-r border-gray-200 dark:border-gray-700">
+      <button
+        onClick={() => setCurrentTool(Tool.CURSOR)}
+        className={`toolbar-btn ${currentTool === Tool.CURSOR ? 'active' : ''}`}
+        title="Cursor"
+      >
+        <MousePointer className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => setCurrentTool(Tool.BRUSH)}
+        className={`toolbar-btn ${currentTool === Tool.BRUSH ? 'active' : ''}`}
+        title="Brush"
+      >
+        <Pencil className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => setCurrentTool(Tool.ERASER)}
+        className={`toolbar-btn ${currentTool === Tool.ERASER ? 'active' : ''}`}
+        title="Eraser"
+      >
+        <Eraser className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => setCurrentTool(Tool.TEXT)}
+        className={`toolbar-btn ${currentTool === Tool.TEXT ? 'active' : ''}`}
+        title="Text"
+      >
+        <Type className="w-5 h-5" />
+      </button>
       </div>
 
       <div className="flex items-center gap-4 pr-4 border-r border-gray-200 dark:border-gray-700">
@@ -98,17 +116,32 @@ export default function Toolbar() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 min-w-[120px]">
-          <label className="text-xs text-gray-500 dark:text-gray-400">Size</label>
-          <input
-            type="range"
-            min="1"
-            max="50"
-            value={brushSize}
-            onChange={(e) => setBrushSize(Number(e.target.value))}
-            className="slider"
-          />
-        </div>
+        {currentTool === Tool.TEXT ? (
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            <label className="text-xs text-gray-500 dark:text-gray-400">Font Size</label>
+            <input
+              type="range"
+              min="12"
+              max="72"
+              value={fontSize}
+              onChange={(e) => setFontSize(Number(e.target.value))}
+              className="slider"
+            />
+            <span className="text-xs text-gray-500 dark:text-gray-400 text-center">{fontSize}px</span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            <label className="text-xs text-gray-500 dark:text-gray-400">Size</label>
+            <input
+              type="range"
+              min="1"
+              max="50"
+              value={brushSize}
+              onChange={(e) => setBrushSize(Number(e.target.value))}
+              className="slider"
+            />
+          </div>
+        )}
 
         <div className="flex flex-col gap-1 min-w-[120px]">
           <label className="text-xs text-gray-500 dark:text-gray-400">Opacity</label>

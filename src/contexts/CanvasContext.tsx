@@ -28,6 +28,8 @@ interface CanvasContextType {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  fontSize: number;
+  setFontSize: (size: number) => void;
 }
 
 const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
@@ -57,6 +59,7 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
   const [currentPattern, setCurrentPattern] = useState<Pattern>(Pattern.NONE);
   const [history, setHistory] = useState<CanvasHistoryState[]>([]);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
+  const [fontSize, setFontSize] = useState(24);
 
   const addToHistory = useCallback((dataUrl: string) => {
     const newHistory = [...history.slice(0, currentHistoryIndex + 1), { dataUrl }];
@@ -113,6 +116,8 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
         redo,
         canUndo,
         canRedo,
+        fontSize,
+        setFontSize
       }}
     >
       {children}

@@ -23,9 +23,22 @@
   cursor: var(--cursor-eraser);
 }
 
+.cursor-text {
+  cursor: text;
+}
+
+.cursor-default {
+  cursor: default;
+}
+
 * {
   user-select: none;
   -webkit-user-select: none;
+}
+
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .slider {

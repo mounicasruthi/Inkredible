@@ -1,6 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useCanvasContext } from '../contexts/CanvasContext';
 import { Tool, Pattern } from '../types';
+import TextInput from './TextInput';
+
+interface TextBox {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  fontSize: number;
+}
 
 export default function Canvas() {
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -16,12 +25,15 @@ export default function Canvas() {
     currentHistoryIndex,
     addToHistory,
     isDarkMode,
-    currentPattern
+    currentPattern,
+    fontSize
   } = useCanvasContext();
   
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
+  const [isAddingText, setIsAddingText] = useState(false);
+  const [textPosition, setTextPosition] = useState({ x: 0, y: 0 });
 
   const drawPattern = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.clearRect(0, 0, width, height);
@@ -152,8 +164,7 @@ export default function Canvas() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Update background when pattern or theme changes
-  useEffect(() => {
+  useEffect(() => {  // Update background when pattern or theme changes
     if (bgCanvasRef.current) {
       const bgCtx = bgCanvasRef.current.getContext('2d');
       if (bgCtx) {
@@ -198,7 +209,30 @@ export default function Canvas() {
     };
   };
 
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (currentTool === Tool.TEXT && !isAddingText) {
+      const { x, y } = getPointerPos(e);
+      setTextPosition({ x, y });
+      setIsAddingText(true);
+    }
+  };
+
+  const handleTextComplete = (text: string) => {
+    if (ctx) {
+      ctx.font = `${fontSize}px sans-serif`;
+      ctx.fillStyle = brushColor;
+      ctx.globalAlpha = brushOpacity;
+      ctx.fillText(text, textPosition.x, textPosition.y);
+      setIsAddingText(false);
+      if (fgCanvasRef.current) {
+        addToHistory(fgCanvasRef.current.toDataURL());
+      }
+    }
+  };
+
   const startDrawing = (e: React.TouchEvent | React.MouseEvent) => {
+    if (currentTool === Tool.TEXT || currentTool === Tool.CURSOR) return;
+
     e.preventDefault();
     const { x, y } = getPointerPos(e);
     setIsDrawing(true);
@@ -207,6 +241,8 @@ export default function Canvas() {
   };
 
   const draw = (e: React.TouchEvent | React.MouseEvent) => {
+    if (currentTool === Tool.TEXT || currentTool === Tool.CURSOR) return;
+
     e.preventDefault();
     if (!isDrawing || !ctx || !fgCanvasRef.current) return;
 
@@ -244,9 +280,15 @@ export default function Canvas() {
         style={{ width: '100%', height: '100%' }}
       />
       <canvas
-        ref={fgCanvasRef}
+          ref={fgCanvasRef}
         className={`absolute inset-0 touch-none ${
-          currentTool === Tool.BRUSH ? 'cursor-brush' : 'cursor-eraser'
+          currentTool === Tool.TEXT 
+            ? 'cursor-text' 
+            : currentTool === Tool.BRUSH 
+              ? 'cursor-brush' 
+              : currentTool === Tool.ERASER
+                ? 'cursor-eraser'
+                : 'cursor-default'
         }`}
         style={{ width: '100%', height: '100%' }}
         onMouseDown={startDrawing}
@@ -256,7 +298,16 @@ export default function Canvas() {
         onTouchStart={startDrawing}
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
+        onClick={handleCanvasClick}
       />
+       {isAddingText && (
+        <TextInput
+          x={textPosition.x}
+          y={textPosition.y}
+          onComplete={handleTextComplete}
+          onCancel={() => setIsAddingText(false)}
+        />
+       )}
     </>
   );
 }
