@@ -67,6 +67,9 @@ export default function Canvas() {
       case Pattern.DOTS:
         const dotSpacing = 20;
         const dotRadius = 1;
+
+        ctx.fillStyle = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+
         for (let x = dotSpacing; x < width; x += dotSpacing) {
           for (let y = dotSpacing; y < height; y += dotSpacing) {
             ctx.beginPath();
