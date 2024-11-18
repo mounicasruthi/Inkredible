@@ -47,7 +47,7 @@ A feature-rich digital sketching platform built with **React**, **TypeScript**, 
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/digital-sketchbook-app.git
+    git clone https://github.com/mounicasruthi/inkredible.git
     cd inkredible
     ```
 
